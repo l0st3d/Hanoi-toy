@@ -91,14 +91,14 @@
 ;; printer
 
 (defn game->str [game]
-  (let [largest-tile (transduce (comp (map first) (keep ::size)) max 0 game)]
-    (reduce (fn [s i]
-              (->> game
-                   (map #(-> % (get i) (::size ".")))
-                   (interpose " ")
-                   (apply str s (when s "\n"))))
-            nil
-            (reverse (range largest-tile)))))
+  (let [largest-tile (->> game (map first) (keep ::size) (reduce max 0))]
+    (->> game
+         (map #(->> % reverse (map ::size) (concat (repeat (- largest-tile (count %)) "."))))
+         (apply map vector)
+         (map #(interpose " " %))
+         (interpose "\n")
+         flatten
+         (apply str))))
 
 ;; Global state of "the" game
 
