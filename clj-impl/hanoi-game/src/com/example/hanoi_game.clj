@@ -42,7 +42,7 @@
 
 (defn are-games-the-same-size?
   ([{[old-game] :args new-game :ret}]
-   (games-are-the-same-size old-game new-game))
+   (are-games-the-same-size? old-game new-game))
   ([old-game new-game]
    (let [size-of (partial transduce (map count) + 0)]
      (= (size-of old-game) (size-of new-game)))))
