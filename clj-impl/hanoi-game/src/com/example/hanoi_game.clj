@@ -16,29 +16,25 @@
       (->> pillar (map ::size) (apply >))))
 
 (s/def ::pillar (s/and (s/coll-of ::tile) tiles-in-desc-order?))
-(s/def ::game (s/tuple ::pillar ::pillar ::pillar))
-(s/def ::move (s/and
-               (s/cat :from nat-int?
-                      :to nat-int?)
-               (fn [{:keys [from to]}] (not= from to))))
+(s/def ::game (s/tuple ::pillar ::pillar ::pillar)) ;NOTE these 2 specs assume game is of size 3 
+(s/def ::pillar-index (s/and nat-int? #(< % 3)))
+(s/def ::move (s/and (s/cat :from ::pillar-index
+                            :to   ::pillar-index)
+                     (fn [{:keys [from to]}] (not= from to))))
 
 (defn valid-pillar?
-  ([k {:keys [move game]}]
-   (< (move k) (count game)))
+  ([k [game move]]
+   (when (and k move game)
+     (< (move k) (count game))))
   ([k] (partial valid-pillar? k)))
 
-(s/def ::game-and-move (s/and (s/cat :game ::game
-                                     :move ::move)
+(s/def ::game-and-move (s/and (s/tuple ::game ::move)
                               (valid-pillar? :from)
                               (valid-pillar? :to)))
 
-(s/fdef ->tile
-        :args (s/cat :size ::size)
-        :ret  ::tile)
+(s/fdef ->tile :args (s/cat :size ::size) :ret ::tile)
 
-(s/fdef create
-        :args (s/cat :size pos-int?)
-        :ret  ::game)
+(s/fdef create :args (s/cat :size pos-int?) :ret ::game)
 
 (defn are-games-the-same-size?
   ([{[old-game] :args new-game :ret}]
@@ -47,10 +43,7 @@
    (let [size-of (partial transduce (map count) + 0)]
      (= (size-of old-game) (size-of new-game)))))
 
-(s/fdef move
-        :args ::game-and-move
-        :ret ::game
-        :fn are-games-the-same-size?)
+(s/fdef move :args ::game-and-move :ret ::game :fn are-games-the-same-size?)
 
 ;; Model
 
@@ -67,12 +60,13 @@
 
 (defn move
   "Move a piece in the game."
-  [game [from to]]
-  {:pre  [(s/assert ::game-and-move [game [from to]])]
+  [game move]
+  {:pre  [(s/assert ::game-and-move [game move])]
    :post [(s/assert ::game %) (are-games-the-same-size? game %)]}
-  (-> game
-      (update from (comp vec butlast))
-      (update to conj (last (get game from)))))
+  (let [{:keys [from to]} (s/conform ::move move)]
+    (-> game
+        (update from (comp vec butlast))
+        (update to conj (last (get game from))))))
 
 ;; Solver
 
