@@ -44,11 +44,11 @@
                  (hanoi/move [1 2]))))))
   (testing "valid move"
     (let [game (hanoi/create 5)]
-      (is (hanoi/valid-move? game [0 1])))
+      (is (s/valid? ::hanoi/game (hanoi/move game [0 1]))))
     (let [game (-> (hanoi/create 3)
                    (hanoi/move [0 2])
                    (hanoi/move [0 1]))]
-      (is (not (hanoi/valid-move? game [1 2])))))
+      (is (thrown? Throwable (hanoi/move game [1 2])))))
   (testing "solution"
     (let [game-start (hanoi/create 3)]
       (let [moves (hanoi/solve game-start)]
